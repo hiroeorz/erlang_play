@@ -1,6 +1,0 @@
-#!/usr/bin/env escript
-
-
-main(Args) ->
-    [PORT] = [list_to_integer(X) || X <- Args],
-    http_passive_server:start(PORT).
