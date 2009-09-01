@@ -1,0 +1,8 @@
+#!/usr/bin/env escript
+
+main(_) ->
+	X = 12,
+	Y = 3,
+	Result = calc:plus(X, Y),
+	io:format("~w + ~w = ~w\n", [X, Y, Result]),
+	init:stop().

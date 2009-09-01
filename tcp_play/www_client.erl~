@@ -1,0 +1,4 @@
+#!/usr/bin/env escript
+
+main(A) ->
+    get_url(A)

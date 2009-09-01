@@ -1,0 +1,7 @@
+#!/usr/bin/env escript
+
+main([ARGS]) ->
+	  I = list_to_integer(atom_to_list(ARGS)),
+	  Result = calc:plus(I),
+	  io:format("result: ~w", [Result]),
+	  init:stop().

@@ -1,0 +1,23 @@
+#!/usr/bin/env escript
+
+main(_) ->
+    start_simple_server().
+
+start_simple_server() ->
+    {ok, Listen} = gen_tcp:listen(2345, [binary, 
+					 {packet, 4}, 
+					 {reuseaddr, true},
+					 {active, true}]),
+    {ok, Socket} = gen_tcp:accept(Listen),
+    server_loop(Sokcet).
+
+server_loop(Socket) ->
+    receive
+	{tcp, Socket, Bin} ->
+	    Str = binary_to_term(Bin),
+	    Reply = lib_misc:string2value(Str),
+	    gen_tcp:send(Socket, term_to_binary(Reply)),
+	    server_loop(Socket);
+	{tcp_closed, Socket} ->
+	    io:format("socket closed~n")
+    end.

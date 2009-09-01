@@ -1,0 +1,5 @@
+#!/usr/bin/env escript
+
+
+main(_) ->
+    http_passive_server:start().

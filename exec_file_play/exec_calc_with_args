@@ -1,0 +1,9 @@
+#!/usr/bin/env escript
+
+main(A) ->
+	io:format("~p~n", [[A]]),
+	[X, Y] = [list_to_integer(X) || X <- A],
+	
+	Result = calc:plus(X, Y),
+	io:format("~w + ~w = ~w~n", [X, Y, Result]),
+	init:stop().
