@@ -16,16 +16,15 @@ wait_client(Listen) ->
     {ok, Socket} = gen_tcp:accept(Listen),
 
     Pid = spawn(fun() -> child_process(Socket) end),
+    inet:setopts(Socket, [{packet, 0}, 
+			  binary, 
+			  {nodelay, true}, 
+			  {active, true}]),
     gen_tcp:controlling_process(Socket, Pid),
 
     wait_client(Listen).
 
 child_process(Socket) ->
-    inet:setopts(Socket, [{packet, 0}, 
-			  binary, 
-			  {nodelay, true}, 
-			  {active, true}]),
-
     receive
 	{tcp, Socket, Str} ->
 	    io:format("received_data: ~s~n", [Str]),

@@ -1,13 +1,15 @@
 -module(cat).
-
 -include_lib("stdlib/include/qlc.hrl").
--record(cat, {name, type, old}).
-
 -compile(export_all).
+
+-record(cat, {name, type, old}).
 
 
 setup_schema() ->
     mnesia:create_schema(['erl@ceres.komatsuelec.co.jp']).
+
+start() ->
+    mnesia:start().
 
 create_table() ->
     mnesia:create_table(cat, [{attributes, record_info(fields, cat)}]).
@@ -19,8 +21,16 @@ insert(Name, Type, Old) ->
     
     mnesia:transaction(F).
 
-all_cats() ->
-    do(qlc:q([X#cat.name || X <- mnesia:table(cat)])).
+get(Name) ->
+    F = fun() ->
+		mnesia:read({cat, Name})
+	end,
+    
+    {atomic, [Result]} = mnesia:transaction(F),
+    Result.
+
+all() ->
+    do(qlc:q([{X#cat.name, X#cat.type, X#cat.old} || X <- mnesia:table(cat)])).
 
 adult_cats() ->
     do(qlc:q([X#cat.name || X <- mnesia:table(cat),
@@ -29,14 +39,6 @@ adult_cats() ->
 child_cats() ->
     do(qlc:q([X#cat.name || X <- mnesia:table(cat),
 			   X#cat.old < 3])).
-
-get(Name) ->
-    F = fun() ->
-		mnesia:read({cat, Name})
-	end,
-    
-    {atomic, [Result]} = mnesia:transaction(F),
-    Result.
 
 do(Q) ->
     F = fun() ->
