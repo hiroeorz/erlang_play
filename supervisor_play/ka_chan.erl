@@ -10,7 +10,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, start_in_shell/0, start_in_shell/1]).
+-export([start_link/0, start_in_shell/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -29,12 +29,7 @@ start_link() ->
 
 start_in_shell() ->
     {ok, Pid} = supervisor:start_link({local, ?SERVER}, 
-				      ?MODULE, [one_for_all]),
-    unlink(Pid).
-
-start_in_shell(RESTART_MODE) ->
-    {ok, Pid} = supervisor:start_link({local, ?SERVER}, 
-				      ?MODULE, [RESTART_MODE]),
+				      ?MODULE, []),
     unlink(Pid).
 
 %%====================================================================
@@ -49,7 +44,7 @@ start_in_shell(RESTART_MODE) ->
 %% to find out about restart strategy, maximum restart frequency and child 
 %% specifications.
 %%--------------------------------------------------------------------
-init([RESTART_MODE]) ->
+init([]) ->
 
     ICHIRO = {ic,
 	     {ichiro, start_link,[]},
@@ -72,7 +67,7 @@ init([RESTART_MODE]) ->
 	     worker,
 	     [saburo]},
 
-    {ok,{{RESTART_MODE,3,10}, [ICHIRO, JIRO, SABURO]}}.
+    {ok,{{one_for_all,3,10}, [ICHIRO, JIRO, SABURO]}}.
 
 %%====================================================================
 %% Internal functions
