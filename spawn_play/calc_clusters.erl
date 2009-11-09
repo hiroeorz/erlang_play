@@ -1,4 +1,4 @@
--module(gcalc).
+-module(calc_clusters).
 -compile(export_all).
 -import(lists).
 
@@ -10,16 +10,42 @@ init() ->
     end.
 
 
+spawn_clusters(NodesList, ProcessCount) ->
+    Results = connect(NodesList),
+    
+    F = fun(Result) ->
+		{Node, Bool} = Result,
+
+		case Bool of
+		    true -> spawn_clusters_of_node(Node, ProcessCount); 
+		    _ -> not_connected
+		end
+	end,
+
+    [F(Result) || Result <- Results].
+
+spawn_clusters_of_node(Node, ProcessCount) ->
+    case ProcessCount of
+	0 -> ok;
+	_ ->
+	    start(Node),
+	    spawn_clusters_of_node(Node, ProcessCount - 1)
+    end.    
+
+connect(Nodes) ->
+    Results = [{Node, ping(Node)} || Node <- Nodes],
+    shell_default:nl(?MODULE),
+    Results.
+
 %%リモートでプロセスを立ち上げる。
 start(Node) ->
-    init(),
+    %init(),
+    %ping(Node),                             
+    %shell_default:nl(?MODULE),              
 
-    ping(Node),                             %%リモートのノードと接続を確立する。
-    shell_default:nl(?MODULE),              %%モジュールをリモートのノードに送信する。
+    Pid = spawn_link(Node, ?MODULE, loop, []),
 
-    Pid = spawn(Node, fun() -> loop() end), %%ノードを指定してプロセスを立ち上げ。
-
-    ets:insert(clusters, {?MODULE, Pid}),   %%Pid番号を保存しておく。
+    ets:insert(clusters, {?MODULE, Pid}),
     Pid.
 
 
@@ -27,17 +53,33 @@ start(Node) ->
 start(Node, Name) ->
     global:register_name(Name, start(Node)).
 
+%% リモートに処理を依頼。
+%%   Pidが登録された名前でもPid番号でも同様に動作するように。
 rpc(Pid, Request) ->
-    %% Pidが登録された名前でもPid番号でも同様に動作するように。
     case is_atom(Pid) of
 	true -> global:send(Pid, {self(), Pid, Request});
 	false -> Pid ! {self(), Pid, Request}
     end,
     
-    %%リモートからの処理結果を受信する。
     receive
 	{Pid, Response} -> Response;
 	Any -> io:format("received: ~p~n", [Any])
+
+    after 1000 ->
+	    io:format("timeout~n"),
+
+	    Pids = ets:lookup(clusters, ?MODULE),
+	    NewPids = lists:delete({?MODULE, Pid}, Pids),
+
+	    ets:delete(clusters, ?MODULE),
+	    [ets:insert(clusters, X) || X <- NewPids],
+	    
+	    io:format("cluster deleted from table: ~p~n", [Pid]),
+	    
+	    case NewPids of 
+		[] -> non_clusters;
+		_ -> rpc(Request)
+	    end
     end.
 
 rpc(Request) ->
